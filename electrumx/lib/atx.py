@@ -13,7 +13,7 @@ class BTCV3KeysDeserializer(DeserializerSegWit):
             return True
         return False
 
-    def _check_if_alert_is_seg_wit(self):
+    def _check_if_alert_is_segwit(self):
         # check if maker byte exists by compare it to 0x00
         return self.binary[5] == 0x00
 
@@ -25,7 +25,7 @@ class BTCV3KeysDeserializer(DeserializerSegWit):
         atx = []
         if self._check_if_alert_exist():
             atx_no = self._read_varint()
-            if not self._check_if_alert_is_seg_wit():
+            if not self._check_if_alert_is_segwit():
                 read = self._read_tx_and_hash_no_segwit
             atx = [read() for _ in range(atx_no)]
 

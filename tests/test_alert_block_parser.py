@@ -1,5 +1,5 @@
 from unittest import TestCase
-from electrumx.lib.coins import BTCVAlert
+from electrumx.lib.coins import BitcoinVault3Keys
 from electrumx.lib.tx import Tx, TxSegWit
 
 
@@ -12,7 +12,7 @@ ATX_NO_SEGWIT = '01020000000128c8882424d6a9b67b5fd3ee28e258fe77c09f5214f85380343
 
 class TestParsingAlertTransaction(TestCase):
     def setUp(self):
-        self.coin = BTCVAlert()
+        self.coin = BitcoinVault3Keys()
 
     def test_no_segwit_atx(self):
         raw_block = bytes.fromhex(

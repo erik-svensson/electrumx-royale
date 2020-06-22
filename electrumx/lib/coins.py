@@ -3344,5 +3344,5 @@ class BitcoinVaultRegTest(Coin):
     DAEMON = daemon.FakeEstimateFeeDaemon
 
 
-class BTCVAlert(BitcoinVaultRegTest):
+class BitcoinVault3Keys(BitcoinVaultRegTest):
     DESERIALIZER = BTCV3KeysDeserializer
