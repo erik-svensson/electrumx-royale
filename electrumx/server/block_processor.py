@@ -872,6 +872,8 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
         hashXs_by_tx = []
         append_hashXs = hashXs_by_tx.append
         recovered_atx_nums = set()
+        # tx_num: hashX[]
+        recovered_atx_hashXs = {}
 
         for tx, tx_hash in txs:
             hashXs = []
@@ -887,6 +889,9 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
                 append_hashX(cache_value[:-16])
                 if tx.type == VaultTxType.RECOVERY:
                     spend_tx_num = unpack('<I', cache_value[-4:])[0]
+                    if spend_tx_num not in recovered_atx_hashXs:
+                        recovered_atx_hashXs[spend_tx_num] = []
+                    recovered_atx_hashXs[spend_tx_num].append(cache_value[:-16])
                     recovered_atx_nums.add(spend_tx_num)
 
             # Add the new UTXOs
@@ -939,21 +944,22 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
                 recovered_atx_hash = self.get_tx_hash_from_cache(atx_num, recovered_atx_height)
             recovered_atx.append(recovered_atx_hash)
 
-            # hashXs = atx_hashXs
-            # append_hashX = hashXs.append
+            append_hashX = recovered_atx_hashXs[atx_num].append
             vout_index = 0
             while True:
                 try:
                     cache_value = confirm_utxo(recovered_atx_hash, vout_index)
                     undo_info_append(cache_value)
-                    # append_hashX(cache_value[:-16])
+                    append_hashX(cache_value[:-16])
                 except ChainError:
                     break
                 vout_index += 1
 
-            # append_hashXs(atx_hashXs)
-            # update_touched(atx_hashXs)
+            append_hashXs(recovered_atx_hashXs[atx_num])
+            update_touched(recovered_atx_hashXs[atx_num])
             tx_num += 1
+            # TODO: use separate counter for recovered alerts
+            #       when get_alert_merkle_root method is implemented
             atx_num += 1
 
         self.tx_hashes.append(
