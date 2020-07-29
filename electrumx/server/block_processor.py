@@ -938,13 +938,13 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
 
         # Handle recovered ALERTs
         recovered_atx = []
-        for atx_num in recovered_atx_nums:
-            recovered_atx_hash, recovered_atx_height = self.db.fs_tx_hash(atx_num)
+        for num in recovered_atx_nums:
+            recovered_atx_hash, recovered_atx_height = self.db.fs_tx_hash(num)
             if recovered_atx_hash is None:
-                recovered_atx_hash = self.get_tx_hash_from_cache(atx_num, recovered_atx_height)
+                recovered_atx_hash = self.get_tx_hash_from_cache(num, recovered_atx_height)
             recovered_atx.append(recovered_atx_hash)
 
-            append_hashX = recovered_atx_hashXs[atx_num].append
+            append_hashX = recovered_atx_hashXs[num].append
             vout_index = 0
             while True:
                 try:
@@ -955,8 +955,8 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
                     break
                 vout_index += 1
 
-            append_hashXs(recovered_atx_hashXs[atx_num])
-            update_touched(recovered_atx_hashXs[atx_num])
+            append_hashXs(recovered_atx_hashXs[num])
+            update_touched(recovered_atx_hashXs[num])
             tx_num += 1
             # TODO: use separate counter for recovered alerts
             #       when get_alert_merkle_root method is implemented
