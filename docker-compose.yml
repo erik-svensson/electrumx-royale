@@ -3,16 +3,13 @@ version: '3.5'
 services:
 
   bitcoind:
-    image: nexus-01.minebest.local:5001/bitcoind
     build:
-      context: ./docker
-      dockerfile: bitcoind.Dockerfile
+      context: .
+      dockerfile: docker/bitcoind.Dockerfile
     ports:
       - "8332:8332"
       - "18444:18444"
-    entrypoint: ["bvaultd","-conf=/bitcoin/bitcoind-regtest.conf"]
-    labels:
-      io.rancher.container.pull_image: always
+    entrypoint: ["./bvaultd","-conf=/bitcoin/bitcoind-regtest.conf"]
 
   electrumx:
     build:
@@ -26,8 +23,8 @@ services:
     volumes:
       - ./:/electrumx/
     environment:
-      HOME: /electrumx/data
-      DB_DIRECTORY: /electrumx/data
+      HOME: /data
+      DB_DIRECTORY: /data
       DAEMON_URL: user:pass@bitcoind:8332
       COIN: BitcoinVault
       NET: regtest
