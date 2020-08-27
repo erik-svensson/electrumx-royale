@@ -1693,11 +1693,14 @@ class BitcoinVaultElectrumX(ElectrumX):
 
     ALERTS_PROTOCOL_VERSION = (2, 0)
 
+    def _is_alerts_compatible_protocol(self):
+        return self.protocol_tuple >= self.ALERTS_PROTOCOL_VERSION
+
     async def address_status(self, hashX):
         db_history, cost = await self.session_mgr.limited_history(hashX)
         mempool = await self.mempool.transaction_summaries(hashX)
 
-        if self.protocol_tuple < self.ALERTS_PROTOCOL_VERSION:
+        if not self._is_alerts_compatible_protocol():
             status = ''.join(f'{hash_to_hex_str(tx_hash)}:'
                              f'{height:d}:'
                              for tx_hash, height, tx_type in db_history
@@ -1738,7 +1741,7 @@ class BitcoinVaultElectrumX(ElectrumX):
         self.bump_cost(1.0 + len(utxos) / 50)
         spends = await self.mempool.potential_spends(hashX)
 
-        if self.protocol_tuple < self.ALERTS_PROTOCOL_VERSION:
+        if not self._is_alerts_compatible_protocol():
             return [{'tx_hash': hash_to_hex_str(utxo.tx_hash),
                      'tx_pos': utxo.tx_pos,
                      'height': utxo.height, 'value': utxo.value}
@@ -1761,7 +1764,7 @@ class BitcoinVaultElectrumX(ElectrumX):
         unconfirmed = await self.mempool.balance_delta(hashX)
         self.bump_cost(1.0 + len(utxos) / 50)
 
-        if self.protocol_tuple < self.ALERTS_PROTOCOL_VERSION:
+        if not self._is_alerts_compatible_protocol():
             return {'confirmed': confirmed, 'unconfirmed': unconfirmed + alert_incoming}
         else:
             return {'confirmed': confirmed, 'unconfirmed': unconfirmed,
@@ -1771,7 +1774,7 @@ class BitcoinVaultElectrumX(ElectrumX):
         # Note unconfirmed history is unordered in electrum-server
         # height is -1 if it has unconfirmed inputs, otherwise 0
 
-        if self.protocol_tuple < self.ALERTS_PROTOCOL_VERSION:
+        if not self._is_alerts_compatible_protocol():
             result = [{'tx_hash': hash_to_hex_str(tx.hash),
                        'height': -tx.has_unconfirmed_inputs,
                        'fee': tx.fee }
@@ -1791,7 +1794,7 @@ class BitcoinVaultElectrumX(ElectrumX):
         history, cost = await self.session_mgr.limited_history(hashX)
         self.bump_cost(cost)
 
-        if self.protocol_tuple < self.ALERTS_PROTOCOL_VERSION:
+        if not self._is_alerts_compatible_protocol():
             conf = [{'tx_hash': hash_to_hex_str(tx_hash), 'height': height}
                     for tx_hash, height, tx_type in history
                     if int.from_bytes(tx_type, 'big') != VaultTxType.ALERT_PENDING]
