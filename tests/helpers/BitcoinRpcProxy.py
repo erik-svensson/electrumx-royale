@@ -1,18 +1,19 @@
 from tests.helpers.authproxy import AuthServiceProxy, HTTP_TIMEOUT
-from pathlib import Path
 
 
 class RPCProxyWrapper(AuthServiceProxy):
-    def __init__(self, rpcport, rpcuser, rpcpass, datadir=None, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
+    def __init__(self, rpchost, rpcport, rpcuser, rpcpass, rpcwallet='', datadir=None, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.timeout = timeout
         self.connection = connection
         self.service_name = service_name
         self.datadir = datadir
+        self.rpchost = rpchost
         self.rpcport = rpcport
         self.rpcuser = rpcuser
         self.rpcpass = rpcpass
+        self.rpcwallet = rpcwallet
 
-        super().__init__(f"http://{self.rpcuser}:{self.rpcpass}@127.0.0.1:{self.rpcport}", self.service_name, self.timeout, self.connection)
+        super().__init__(f"http://{self.rpcuser}:{self.rpcpass}@{self.rpchost}:{self.rpcport}/wallet/{self.rpcwallet}", self.service_name, self.timeout, self.connection)
 
     @classmethod
     def killall(cls):
@@ -57,46 +58,3 @@ class RPCProxyWrapper(AuthServiceProxy):
         txhex = self.gettransaction(txid)['hex']
         tx = self.decoderawtransaction(txhex)
         return tx['vout'][vout_n]['scriptPubKey']
-
-
-class __test_key:
-    def __init__(self, pub, priv):
-        self.pub = pub
-        self.priv = priv
-
-
-TEST_KEYS = [__test_key("02ecec100acb89f3049285ae01e7f03fb469e6b54d44b0f3c8240b1958e893cb8c",
-                        "cRfYLWua6WcpGbxuv5rJgA2eDESWxqgzmQjKQuqDFMfgbnEpqhrP"),
-             __test_key("0263451a52f3d3ae6918969e1c5ce934743185578481ef8130336ad1726ba61ddb",
-                        "cN1XR72dusJgxpkT2AwENtTviskB96iB2Q6FTvAxqi24fT9DQZiR")]
-
-COINBASE_MATURITY = 100
-COINBASE_AMOUNT = 175
-
-conn = conn1 = RPCProxyWrapper(rpcport=18887, rpcuser='user', rpcpass='pass', datadir=Path.home() / '.bvault1')
-conn2 = RPCProxyWrapper(rpcport=18888, rpcuser='user', rpcpass='pass', datadir=Path.home() / '.bvault2')
-
-
-def print_json(*args, **kwargs):
-    import simplejson
-    print(simplejson.dumps(*args, sort_keys=True, indent=4), **kwargs)
-
-
-def find_vout_n(rawtransaction, amount):
-    for vout in rawtransaction['vout']:
-        if vout['value'] == amount: return vout['n']
-
-    raise RuntimeError('vout not found')
-
-
-def find_address(listreceivedbyaddress, address):
-    for addr in listreceivedbyaddress:
-        if addr['address'] == address: return addr
-
-    raise RuntimeError('address not found')
-
-
-def wait_for_bvaultd(num_instances):
-    import psutil
-    input(f'Start {num_instances} bvaultd daemons and input anything to continue...')
-    if [p.name() for p in psutil.process_iter()].count('bvaultd') != num_instances: raise RuntimeError('looks like bvaultd is still running')
