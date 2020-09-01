@@ -2,7 +2,7 @@ from tests.helpers.authproxy import AuthServiceProxy, HTTP_TIMEOUT
 
 
 class RPCProxyWrapper(AuthServiceProxy):
-    def __init__(self, rpchost, rpcport, rpcuser, rpcpass, datadir=None, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
+    def __init__(self, rpchost, rpcport, rpcuser, rpcpass, rpcwallet='', datadir=None, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.timeout = timeout
         self.connection = connection
         self.service_name = service_name
@@ -11,8 +11,9 @@ class RPCProxyWrapper(AuthServiceProxy):
         self.rpcport = rpcport
         self.rpcuser = rpcuser
         self.rpcpass = rpcpass
+        self.rpcwallet = rpcwallet
 
-        super().__init__(f"http://{self.rpcuser}:{self.rpcpass}@{self.rpchost}:{self.rpcport}", self.service_name, self.timeout, self.connection)
+        super().__init__(f"http://{self.rpcuser}:{self.rpcpass}@{self.rpchost}:{self.rpcport}/wallet/{self.rpcwallet}", self.service_name, self.timeout, self.connection)
 
     @classmethod
     def killall(cls):
