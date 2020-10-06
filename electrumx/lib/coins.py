@@ -51,7 +51,7 @@ from electrumx.server.db import BitcoinVaultDB, DB
 from electrumx.server.mempool import MemPool, BitcoinVaultMemPool
 from electrumx.server.session import (ElectrumX, DashElectrumX,
                                       SmartCashElectrumX, AuxPoWElectrumX,
-                                      BitcoinVaultElectrumX)
+                                      BitcoinVaultElectrumX, BitcoinVaultAuxPoWElectrumX)
 
 Block = namedtuple("Block", "raw header transactions")
 BitcoinVaultBlock = namedtuple("Block", "raw header transactions alerts")
@@ -3389,3 +3389,49 @@ class BitcoinVaultRegTest(BitcoinVault):
     XPUB_VERBYTES = bytes.fromhex("043587CF")
     XPRV_VERBYTES = bytes.fromhex("04358394")
     ALERTS_HEIGHT = 1
+
+
+class BitcoinVaultMergeMining(BitcoinVault):
+    NAME = "BitcoinVaultMergeMining"
+    SHORTNAME = "BTCVMM"
+    DESERIALIZER = lib_tx.DeserializerBitcoinVaultAuxPoW
+    SESSIONCLS = BitcoinVaultAuxPoWElectrumX
+    STATIC_BLOCK_HEADERS = False
+    DEFAULT_MAX_SEND = 10_000_000
+    TRUNCATED_HEADER_SIZE = 80
+    MERGE_MINING_HEIGHT = 0
+
+    @classmethod
+    def block(cls, raw_block, height):
+        '''Return a Block namedtuple given a raw block and its height.'''
+        deserializer = cls.DESERIALIZER(
+            binary=raw_block,
+            start=0,
+            alerts_enabled=cls.are_alerts_enabled(height),
+            aux_pow_enabled=height >= cls.MERGE_MINING_HEIGHT
+        )
+        header = deserializer.read_header(cls.BASIC_HEADER_SIZE)
+        txs, atxs = deserializer.read_tx_block()
+        return BitcoinVaultBlock(raw_block, header, txs, atxs)
+
+    @classmethod
+    def genesis_block(cls, block):
+        """In merge-mining we have dynamic header size, so we can't use static header size method.
+However we assume that genesis block doesn't have AuxPoW header and then we can get header base on static size"""
+        header = block[:cls.BASIC_HEADER_SIZE]
+        header_hex_hash = hash_to_hex_str(cls.header_hash(header))
+        if header_hex_hash != cls.GENESIS_HASH:
+            raise CoinError(f'genesis block has hash {header_hex_hash} expected {cls.GENESIS_HASH}')
+        return header + bytes(1)
+
+
+class BitcoinVaultTestnetMergeMining(BitcoinVaultTestnet, BitcoinVaultMergeMining):
+    NAME = "BitcoinVaultMergeMining"
+    SHORTNAME = "BTCVTMM"
+    MERGE_MINING_HEIGHT = 0
+
+
+class BitcoinVaultRegTestMergeMining(BitcoinVaultRegTest, BitcoinVaultMergeMining):
+    NAME = "BitcoinVaultMergeMining"
+    SHORTNAME = "BTCVRTMM"
+    MERGE_MINING_HEIGHT = 0

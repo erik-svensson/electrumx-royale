@@ -1103,3 +1103,47 @@ class DeserializerBitcoinVault(DeserializerSegWit):
     @staticmethod
     def is_segwit(tx):
         return isinstance(tx, TxSegWit) or isinstance(tx, TxVaultSegWit)
+
+
+class DeserializerBitcoinVaultAuxPoW(DeserializerBitcoinVault):
+    """Class which extends BitcoinVault Deserializer by Merge Mining AuxPoW header deserialization"""
+    MERGE_MINING_VERSION = (1 << 8)
+
+    def __init__(self, binary, start=0, alerts_enabled=False, aux_pow_enabled=False):
+        super().__init__(binary=binary, start=start, alerts_enabled=alerts_enabled)
+        self.aux_pow_enabled = aux_pow_enabled
+
+    def _read_merkle_branch(self):
+        size = self._read_varint()
+        self.cursor += 32 * size
+
+    def read_auxpow(self):
+        """Reads and returns the CAuxPow data
+We first calculate the size of the CAuxPow instance and then
+read it as bytes in the final step."""
+        start = self.cursor
+
+        self.read_tx()  # AuxPow transaction
+        self._read_merkle_branch()  # Merkle branch
+        self._read_merkle_branch()  # Chain merkle branch
+        self.cursor += 4  # Chain index
+        self.cursor += 80  # Parent block header
+
+        end = self.cursor
+        self.cursor = start
+        return self._read_nbytes(end - start)
+
+    def read_header(self, static_header_size):
+        start = self.cursor
+
+        version = self._read_le_uint32()
+        if self.aux_pow_enabled and version & self.MERGE_MINING_VERSION:
+            self.cursor = start
+            self.cursor += static_header_size  # Block normal header
+            self.read_auxpow()
+            header_end = self.cursor
+        else:
+            header_end = start + static_header_size
+
+        self.cursor = start
+        return self._read_nbytes(header_end - start)
