@@ -3332,7 +3332,7 @@ class BitcoinVault(Coin):
     NAME = "BitcoinVault"
     SHORTNAME = "BTCV"
     NET = "mainnet"
-    DESERIALIZER = lib_tx.DeserializerBitcoinVault
+    DESERIALIZER = lib_tx.DeserializerBitcoinVaultAuxPoW
     BLOCK_PROCESSOR = block_proc.BitcoinVaultBlockProcessor
     P2PKH_VERBYTE = bytes.fromhex("4E")
     P2SH_VERBYTE = [bytes.fromhex("3C")]
@@ -3349,8 +3349,19 @@ class BitcoinVault(Coin):
     PEER_DEFAULT_PORTS = {'t': '50001', 's': '50002'}
     DAEMON = daemon.FakeEstimateFeeDaemon
     DATABASE = BitcoinVaultDB
-    SESSIONCLS = BitcoinVaultElectrumX
+    SESSIONCLS = BitcoinVaultAuxPoWElectrumX
     MEMPOOL = BitcoinVaultMemPool
+    DEFAULT_MAX_SEND = 10_000_000
+    TRUNCATED_HEADER_SIZE = 80
+
+    @classmethod
+    def block_header(cls, block, height):
+        '''Returns the block header given a block and its height.'''
+        deserializer = cls.DESERIALIZER(block)
+
+        if deserializer.is_merged_block():
+            return deserializer.read_header(cls.BASIC_HEADER_SIZE)
+        return block[:cls.static_header_len(height)]
 
     @classmethod
     def block(cls, raw_block, height):
@@ -3390,48 +3401,3 @@ class BitcoinVaultRegTest(BitcoinVault):
     XPRV_VERBYTES = bytes.fromhex("04358394")
     ALERTS_HEIGHT = 1
 
-
-class BitcoinVaultMergeMining(BitcoinVault):
-    NAME = "BitcoinVaultMergeMining"
-    SHORTNAME = "BTCVMM"
-    DESERIALIZER = lib_tx.DeserializerBitcoinVaultAuxPoW
-    SESSIONCLS = BitcoinVaultAuxPoWElectrumX
-    STATIC_BLOCK_HEADERS = False
-    DEFAULT_MAX_SEND = 10_000_000
-    TRUNCATED_HEADER_SIZE = 80
-    MERGE_MINING_HEIGHT = 0
-
-    @classmethod
-    def block(cls, raw_block, height):
-        '''Return a Block namedtuple given a raw block and its height.'''
-        deserializer = cls.DESERIALIZER(
-            binary=raw_block,
-            start=0,
-            alerts_enabled=cls.are_alerts_enabled(height),
-            aux_pow_enabled=height >= cls.MERGE_MINING_HEIGHT
-        )
-        header = deserializer.read_header(cls.BASIC_HEADER_SIZE)
-        txs, atxs = deserializer.read_tx_block()
-        return BitcoinVaultBlock(raw_block, header, txs, atxs)
-
-    @classmethod
-    def genesis_block(cls, block):
-        """In merge-mining we have dynamic header size, so we can't use static header size method.
-However we assume that genesis block doesn't have AuxPoW header and then we can get header base on static size"""
-        header = block[:cls.BASIC_HEADER_SIZE]
-        header_hex_hash = hash_to_hex_str(cls.header_hash(header))
-        if header_hex_hash != cls.GENESIS_HASH:
-            raise CoinError(f'genesis block has hash {header_hex_hash} expected {cls.GENESIS_HASH}')
-        return header + bytes(1)
-
-
-class BitcoinVaultTestnetMergeMining(BitcoinVaultTestnet, BitcoinVaultMergeMining):
-    NAME = "BitcoinVaultMergeMining"
-    SHORTNAME = "BTCVTMM"
-    MERGE_MINING_HEIGHT = 0
-
-
-class BitcoinVaultRegTestMergeMining(BitcoinVaultRegTest, BitcoinVaultMergeMining):
-    NAME = "BitcoinVaultMergeMining"
-    SHORTNAME = "BTCVRTMM"
-    MERGE_MINING_HEIGHT = 0

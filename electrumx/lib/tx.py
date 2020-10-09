@@ -1106,23 +1106,22 @@ class DeserializerBitcoinVault(DeserializerSegWit):
 
 
 class DeserializerBitcoinVaultAuxPoW(DeserializerBitcoinVault):
-    """Class which extends BitcoinVault Deserializer by Merge Mining AuxPoW header deserialization"""
-    MERGE_MINING_VERSION = (1 << 8)
+    VERSION_AUXPOW = (1 << 8)
 
-    def __init__(self, binary, start=0, alerts_enabled=False, aux_pow_enabled=False):
-        super().__init__(binary=binary, start=start, alerts_enabled=alerts_enabled)
-        self.aux_pow_enabled = aux_pow_enabled
-
-    def _read_merkle_branch(self):
-        size = self._read_varint()
-        self.cursor += 32 * size
+    def is_merged_block(self):
+        start = self.cursor
+        self.cursor = 0
+        version = self._read_le_uint32()
+        self.cursor = start
+        if version & self.VERSION_AUXPOW:
+            return True
+        return False
 
     def read_auxpow(self):
         """Reads and returns the CAuxPow data
-We first calculate the size of the CAuxPow instance and then
-read it as bytes in the final step."""
+        We first calculate the size of the CAuxPow instance and then
+        read it as bytes in the final step."""
         start = self.cursor
-
         self.read_tx()  # AuxPow transaction
         self._read_merkle_branch()  # Merkle branch
         self._read_merkle_branch()  # Chain merkle branch
@@ -1134,10 +1133,12 @@ read it as bytes in the final step."""
         return self._read_nbytes(end - start)
 
     def read_header(self, static_header_size):
+        '''Return the AuxPow block header bytes'''
+
+        # We are going to calculate the block size then read it as bytes
         start = self.cursor
 
-        version = self._read_le_uint32()
-        if self.aux_pow_enabled and version & self.MERGE_MINING_VERSION:
+        if self.is_merged_block():
             self.cursor = start
             self.cursor += static_header_size  # Block normal header
             self.read_auxpow()
@@ -1147,3 +1148,7 @@ read it as bytes in the final step."""
 
         self.cursor = start
         return self._read_nbytes(header_end - start)
+
+    def _read_merkle_branch(self):
+        merkle_size = self._read_varint()
+        self.cursor += 32 * merkle_size
