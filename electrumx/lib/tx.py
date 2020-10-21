@@ -1105,7 +1105,7 @@ class DeserializerBitcoinVault(DeserializerSegWit):
         return isinstance(tx, TxSegWit) or isinstance(tx, TxVaultSegWit)
 
 
-class DeserializerBitcoinVaultAuxPoW(DeserializerBitcoinVault):
+class DeserializerBitcoinVaultAuxPoW(DeserializerBitcoinVault, DeserializerAuxPow):
     VERSION_AUXPOW = (1 << 8)
 
     def is_merged_block(self):
@@ -1117,25 +1117,7 @@ class DeserializerBitcoinVaultAuxPoW(DeserializerBitcoinVault):
             return True
         return False
 
-    def read_auxpow(self):
-        """Reads and returns the CAuxPow data
-        We first calculate the size of the CAuxPow instance and then
-        read it as bytes in the final step."""
-        start = self.cursor
-        self.read_tx()  # AuxPow transaction
-        self._read_merkle_branch()  # Merkle branch
-        self._read_merkle_branch()  # Chain merkle branch
-        self.cursor += 4  # Chain index
-        self.cursor += 80  # Parent block header
-
-        end = self.cursor
-        self.cursor = start
-        return self._read_nbytes(end - start)
-
     def read_header(self, static_header_size):
-        '''Return the AuxPow block header bytes'''
-
-        # We are going to calculate the block size then read it as bytes
         start = self.cursor
 
         if self.is_merged_block():
@@ -1148,7 +1130,3 @@ class DeserializerBitcoinVaultAuxPoW(DeserializerBitcoinVault):
 
         self.cursor = start
         return self._read_nbytes(header_end - start)
-
-    def _read_merkle_branch(self):
-        merkle_size = self._read_varint()
-        self.cursor += 32 * merkle_size
