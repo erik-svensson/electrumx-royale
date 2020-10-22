@@ -3388,7 +3388,7 @@ class BitcoinVaultTestnet(BitcoinVault):
     P2SH_VERBYTE = [bytes.fromhex("C4")]
     XPUB_VERBYTES = bytes.fromhex("043587CF")
     XPRV_VERBYTES = bytes.fromhex("04358394")
-    ALERTS_HEIGHT = 81000
+    ALERTS_HEIGHT = 92960
 
 
 class BitcoinVaultRegTest(BitcoinVault):
