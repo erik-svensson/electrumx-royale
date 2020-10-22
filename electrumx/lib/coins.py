@@ -3364,6 +3364,11 @@ class BitcoinVault(Coin):
         return block[:cls.static_header_len(height)]
 
     @classmethod
+    def header_hash(cls, header):
+        '''Given a header return hash'''
+        return double_sha256(header[:cls.BASIC_HEADER_SIZE])
+
+    @classmethod
     def block(cls, raw_block, height):
         '''Return a Block namedtuple given a raw block and its height.'''
         header = cls.block_header(raw_block, height)
