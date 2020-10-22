@@ -3362,7 +3362,7 @@ class BitcoinVault(Coin):
 
         if deserializer.is_merged_block():
             return deserializer.read_header(cls.BASIC_HEADER_SIZE)
-        return block[:cls.static_header_len(height)]
+        return block[:cls.BASIC_HEADER_SIZE]
 
     @classmethod
     def header_hash(cls, header):
