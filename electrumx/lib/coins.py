@@ -3352,6 +3352,7 @@ class BitcoinVault(Coin):
     SESSIONCLS = BitcoinVaultAuxPoWElectrumX
     MEMPOOL = BitcoinVaultMemPool
     DEFAULT_MAX_SEND = 10_000_000
+    STATIC_BLOCK_HEADERS = False
     TRUNCATED_HEADER_SIZE = 80
 
     @classmethod
