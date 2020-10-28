@@ -1816,7 +1816,7 @@ class BitcoinVaultAuxPoWElectrumX(BitcoinVaultElectrumX, AuxPoWElectrumX):
         super().set_request_handlers(ptuple)
         self.request_handlers.update(
             {
-                'blockchain.merge-mining.aux-pow-header': self.get_aux_pow_header,
+                'blockchain.merged-mining.aux-pow-header': self.get_aux_pow_header,
             }
         )
 
@@ -1828,11 +1828,9 @@ class BitcoinVaultAuxPoWElectrumX(BitcoinVaultElectrumX, AuxPoWElectrumX):
         }
 
     async def subscribe_headers_result(self):
-        '''Return {hex: ..., height: ..., aux_pow_hex: ...,}'''
         results = deepcopy(self.session_mgr.hsub_results)
         header = bytes.fromhex(results['hex'])
         results['hex'] = header[:self.coin.TRUNCATED_HEADER_SIZE].hex()
-        results['aux_pow_hex'] = header[self.coin.TRUNCATED_HEADER_SIZE:].hex()
         return results
 
     async def block_header(self, height, cp_height=0):
@@ -1851,3 +1849,14 @@ class BitcoinVaultAuxPoWElectrumX(BitcoinVaultElectrumX, AuxPoWElectrumX):
         if cp_height == 0:
             return header
         return {'header': header}
+
+    async def block_headers(self, start_height, count, cp_height=0):
+        result = await super().block_headers(start_height, count, cp_height)
+
+        # Older protocol versions don't truncate AuxPoW
+        if self.protocol_tuple < (1, 4, 1):
+            return result
+
+        # Covered by a checkpoint; truncate AuxPoW data
+        result['hex'] = self.truncate_auxpow(result['hex'], start_height)
+        return result
