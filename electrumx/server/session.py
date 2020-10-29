@@ -1650,8 +1650,8 @@ class AuxPoWElectrumX(ElectrumX):
         result = await super().block_header(height, cp_height)
 
         # Older protocol versions don't truncate AuxPoW
-        if self.protocol_tuple < (1, 4, 1):
-            return result
+        #if self.protocol_tuple < (1, 4, 1):
+        #    return result
 
         # Not covered by a checkpoint; return full AuxPoW data
         if cp_height == 0:
@@ -1665,8 +1665,8 @@ class AuxPoWElectrumX(ElectrumX):
         result = await super().block_headers(start_height, count, cp_height)
 
         # Older protocol versions don't truncate AuxPoW
-        if self.protocol_tuple < (1, 4, 1):
-            return result
+        #if self.protocol_tuple < (1, 4, 1):
+        #    return result
 
         # Not covered by a checkpoint; return full AuxPoW data
         if cp_height == 0:
@@ -1837,8 +1837,8 @@ class BitcoinVaultAuxPoWElectrumX(BitcoinVaultElectrumX, AuxPoWElectrumX):
         result = await super().block_header(height, cp_height)
 
         # Older protocol versions don't truncate AuxPoW
-        if self.protocol_tuple < (1, 4, 1):
-            return result
+        #if self.protocol_tuple < (1, 4, 1):
+        #    return result
 
         if cp_height == 0:
             header = result
@@ -1854,8 +1854,8 @@ class BitcoinVaultAuxPoWElectrumX(BitcoinVaultElectrumX, AuxPoWElectrumX):
         result = await super().block_headers(start_height, count, cp_height)
 
         # Older protocol versions don't truncate AuxPoW
-        if self.protocol_tuple < (1, 4, 1):
-            return result
+        #if self.protocol_tuple < (1, 4, 1):
+        #    return result
 
         # Covered by a checkpoint; truncate AuxPoW data
         result['hex'] = self.truncate_auxpow(result['hex'], start_height)
