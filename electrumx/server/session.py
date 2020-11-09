@@ -1809,7 +1809,9 @@ class BitcoinVaultAuxPoWElectrumX(BitcoinVaultElectrumX, AuxPoWElectrumX):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_request_handlers(self.PROTOCOL_MAX)
+
+        if self.env.use_max_version:
+            self.set_request_handlers(self.PROTOCOL_MAX)
 
     def set_request_handlers(self, ptuple):
         super().set_request_handlers(ptuple)
