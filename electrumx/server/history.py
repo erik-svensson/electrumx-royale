@@ -16,7 +16,7 @@ from collections import defaultdict
 from functools import partial
 
 import electrumx.lib.util as util
-from electrumx.lib.util import pack_be_uint16, unpack_be_uint16_from
+from electrumx.lib.util import pack_be_uint16, pack_be_uint32, unpack_be_uint32_from
 from electrumx.lib.hash import hash_to_hex_str, HASHX_LEN
 
 
@@ -28,7 +28,7 @@ class History(object):
         self.logger = util.class_logger(__name__, self.__class__.__name__)
         # For history compaction
         self.max_hist_row_entries = 12500
-        self.unflushed = defaultdict(partial(array.array, 'I'))
+        self.unflushed = defaultdict(partial(array.array, 'Q'))
         self.unflushed_count = 0
         self.flush_count = 0
         self.comp_flush_count = -1
@@ -85,7 +85,7 @@ class History(object):
 
         keys = []
         for key, _hist in self.db.iterator(prefix=b''):
-            flush_id, = unpack_be_uint16_from(key[-2:])
+            flush_id, = unpack_be_uint32_from(key[-2:])
             if flush_id > utxo_flush_count:
                 keys.append(key)
 
@@ -130,7 +130,7 @@ class History(object):
     def flush(self):
         start_time = time.time()
         self.flush_count += 1
-        flush_id = pack_be_uint16(self.flush_count)
+        flush_id = pack_be_uint32(self.flush_count)
         unflushed = self.unflushed
 
         with self.db.write_batch() as batch:
