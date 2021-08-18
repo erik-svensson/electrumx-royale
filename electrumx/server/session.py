@@ -1078,20 +1078,15 @@ class ElectrumX(SessionBase):
 
     async def scripthash_get_balance(self, scripthash):
         '''Return the confirmed and unconfirmed balance of a scripthash.'''
-
-        # hashX = scripthash_to_hashX(scripthash)
-        # return await self.get_balance(hashX)
         return await self.scripthash_get_balances(scripthash)
 
     async def scripthash_get_balances(self, scripthashs):
         '''Return the confirmed and unconfirmed balance of a scripthashs.'''
         confirmed = 0
         unconfirmed = 0
-        print('scripthash_get_balances', scripthashs)
         for scripthash in scripthashs.split(','):
             hashX = scripthash_to_hashX(scripthash)
             utxos = await self.db.all_utxos(hashX)
-            print('UTXO', scripthash, utxos)
             confirmed += sum(utxo.value for utxo in utxos)
             tmp = await self.mempool.balance_delta(hashX)
             unconfirmed += tmp[0] # value, in, out
