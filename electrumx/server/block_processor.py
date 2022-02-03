@@ -1102,5 +1102,6 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
     def get_tx_hash_from_cache(self, tx_num, tx_height):
         height_tx_count = self.db.tx_counts[tx_height - 1]
         index = (tx_num - height_tx_count) * 32
+        assert tx_height-self.flush_height > 0
         tx_hash = self.tx_hashes[tx_height-self.flush_height][index:index + 32]
         return tx_hash
