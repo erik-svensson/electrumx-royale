@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v2.2.0 (2022-02-03)
+
+
 ## v2.1.0 (2021-08-18)
 ### Feature
 * Getbalance support single or multi entrance as comma separated list ([#24](https://github.com/bitcoinvault/electrumx/issues/24)) ([`045a0a5`](https://github.com/bitcoinvault/electrumx/commit/045a0a5de1aa55be1c4aa845580b5a3f706762c6))
