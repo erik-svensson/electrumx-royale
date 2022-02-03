@@ -21,9 +21,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set environment variables for dev branch
+      - name: Set environment variables for fix branch
         run: |
-          if [[ $GITHUB_REF == 'refs/heads/development' ]]; then
+          if [[ $GITHUB_REF == 'refs/heads/fix/'* ]]; then
             echo "IMAGE_TAG=fix-$IMAGE_TAG" >> "$GITHUB_ENV"
           fi
 
