@@ -3,7 +3,7 @@ name: "Release"
 on:
   push:
     branches:
-      - master
+      - dev
 
 env:
   ECR_REPOSITORY: electrumx
@@ -37,7 +37,7 @@ jobs:
         continue-on-error: true
 
       - name: Python Semantic Release
-        uses: relekang/python-semantic-release@master
+        uses: relekang/python-semantic-release@dev
         with:
           github_token: ${{ secrets.TS_GH_TOKEN }}
           pypi_token: false
