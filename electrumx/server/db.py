@@ -737,25 +737,54 @@ class BitcoinVaultDB(DB):
             self.atx_counts = array.array('I', atx_counts)
 
     def flush_fs(self, flush_data):
+        print('------------ flush_fs ------------')
         prior_tx_count = (self.tx_counts[self.fs_height]
                           if self.fs_height >= 0 else 0)
+        print(f'prior_tx_count: {prior_tx_count}')
+
+        print(f'len(flush_data.block_tx_hashes) : {len(flush_data.block_tx_hashes)}')
+        print(f'len(flush_data.headers) : {len(flush_data.headers)}')
         assert len(flush_data.block_tx_hashes) == len(flush_data.headers)
+
+        print(f'len(flush_data.block_tx_types) : {len(flush_data.block_tx_types)}')
+        print(f'len(flush_data.headers) : {len(flush_data.headers)}')
         assert len(flush_data.block_tx_types) == len(flush_data.headers)
+
+        print(f'flush_data.height : {flush_data.height}')
+        print(f'self.fs_height + len(flush_data.headers) : {self.fs_height + len(flush_data.headers)}')
         assert flush_data.height == self.fs_height + len(flush_data.headers)
+
+        print(f'flush_data.tx_count : {flush_data.tx_count}')
         assert flush_data.tx_count == (self.tx_counts[-1] if self.tx_counts
                                        else 0)
+
+        print(f'len(self.tx_counts) : {len(self.tx_counts)}')
+        print(f'flush_data.height + 1 : {flush_data.height + 1}')
         assert len(self.tx_counts) == flush_data.height + 1
+
+        print(f'len(self.atx_counts) : {len(self.atx_counts)}')
+        print(f'flush_data.height + 1 : {flush_data.height + 1}')
         assert len(self.atx_counts) == flush_data.height + 1
+
+        print(f'len(self.ratx_counts) : {len(self.ratx_counts)}')
+        print(f'flush_data.height + 1 : {flush_data.height + 1}')
         assert len(self.ratx_counts) == flush_data.height + 1
+
         hashes = b''.join(flush_data.block_tx_hashes)
+        print(f'len(hashes) : {len(hashes)}')
         flush_data.block_tx_hashes.clear()
         assert len(hashes) % 32 == 0
 
         # TODO: We need to know why there is +1, and why it is working
+
+        print(f'flush_data.tx_count + 1 : {flush_data.tx_count + 1}')
+        print(f'prior_tx_count : {prior_tx_count}')
         assert not len(hashes) // 32 == flush_data.tx_count + 1 - prior_tx_count
 
         types = b''.join(flush_data.block_tx_types)
         flush_data.block_tx_types.clear()
+        print(f'len(types)  : {len(types) }')
+        print(f'flush_data.tx_count - prior_tx_count : {flush_data.tx_count - prior_tx_count}')
         assert len(types) == flush_data.tx_count - prior_tx_count
 
         # Write the headers, tx counts, and tx hashes
