@@ -22,9 +22,9 @@ jobs:
           persist-credentials: false
 
       - name: Set environment variables for fix branch
-        if: github.event_name == 'pull_request'
+        if: github.ref != 'ref/heads/master'
         run: 
-          echo "IMAGE_TAG=pull_request-$IMAGE_TAG" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=fix-$IMAGE_TAG" >> "$GITHUB_ENV"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
