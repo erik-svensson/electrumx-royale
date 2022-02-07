@@ -12,7 +12,6 @@
 import asyncio
 from struct import pack, unpack
 import time
-from sys import stdout
 
 from aiorpcx import TaskGroup, run_in_thread
 
@@ -866,8 +865,8 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
         self.tip = self.coin.header_hash(headers[-1])
 
     def advance_txs_and_atxs(self, txs, atxs):
-        stdout.write(f"Block: {self.height}              \r")
-        stdout.flush()
+        # stdout.write(f"Block: {self.height}              \r'")
+        # stdout.flush()
         if (len(atxs) != 0):
             print(f'---------- advance_txs_and_atxs {self.height} ----------')
             print(f'len(txs) {len(txs)}, ')
