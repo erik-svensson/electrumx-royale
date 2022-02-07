@@ -22,10 +22,9 @@ jobs:
           persist-credentials: false
 
       - name: Set environment variables for fix branch
-        run: |
-          if [[ $GITHUB_REF == 'refs/heads/fix/'* ]]; then
-            echo "IMAGE_TAG=fix-$IMAGE_TAG" >> "$GITHUB_ENV"
-          fi
+        if: startsWith(github.ref, "ref/heads/fix")
+        run: 
+          echo "IMAGE_TAG=fix-$IMAGE_TAG" >> "$GITHUB_ENV"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -45,6 +44,7 @@ jobs:
 
       - name: Python Semantic Release
         uses: relekang/python-semantic-release@master
+        if: github.ref == 'ref/heads/master'
         with:
           github_token: ${{ secrets.TS_GH_TOKEN }}
           pypi_token: false
@@ -54,6 +54,9 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Show version
+        run: cat electrumx/__init__.py 
 
       - name: Builder image
         run: docker build -t $BUILD_NAME .
