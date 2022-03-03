@@ -351,7 +351,7 @@ class BlockProcessor(object):
             flush_arg = self.check_cache_size()
             if flush_arg is not None:
                 await self.flush(flush_arg)
-            self.next_cache_check = time.time() + 30
+            self.next_cache_check = time.time() + (60 * 5) # flush every five minutes
 
     def check_cache_size(self):
         '''Flush a cache if it gets too big.'''
