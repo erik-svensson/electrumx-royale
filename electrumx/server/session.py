@@ -1166,6 +1166,12 @@ class ElectrumX(SessionBase):
         result.update(await self._merkle_proof(cp_height, height))
         return result
 
+    async def get_block(self, block_hash, verbose=False):
+        '''The minimum fee a low-priority tx must pay in order to be accepted
+        to the daemon's memory pool.'''
+        self.bump_cost(1.0)
+        return await self.daemon_request('getblock', block_hash, verbose)
+
     async def block_headers(self, start_height, count, cp_height=0):
         '''Return count concatenated block headers as hex for the main chain;
         starting at start_height.
@@ -1401,6 +1407,7 @@ class ElectrumX(SessionBase):
 
         handlers = {
             'blockchain.block.header': self.block_header,
+            'blockchain.block.get_block': self.get_block,
             'blockchain.block.headers': self.block_headers,
             'blockchain.estimatefee': self.estimatefee,
             'blockchain.headers.subscribe': self.headers_subscribe,

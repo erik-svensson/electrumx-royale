@@ -351,7 +351,7 @@ class BlockProcessor(object):
             flush_arg = self.check_cache_size()
             if flush_arg is not None:
                 await self.flush(flush_arg)
-            self.next_cache_check = time.time() + 30
+            self.next_cache_check = time.time() + (60 * 5) # flush every five minutes
 
     def check_cache_size(self):
         '''Flush a cache if it gets too big.'''
@@ -660,14 +660,17 @@ class BlockProcessor(object):
         '''
         self._caught_up_event = caught_up_event
         await self._first_open_dbs()
-        try:
-            async with TaskGroup() as group:
-                await group.spawn(self.prefetcher.main_loop(self.height))
-                await group.spawn(self._process_prefetched_blocks())
-        finally:
-            # Shut down block processing
-            self.logger.info('flushing to DB for a clean shutdown...')
-            await self.flush(True)
+        # try:
+        async with TaskGroup() as group:
+            await group.spawn(self.prefetcher.main_loop(self.height))
+            await group.spawn(self._process_prefetched_blocks())
+        # except Exception as ex:
+        #     print (ex)
+        # finally:
+
+        # Shut down block processing
+        self.logger.info('flushing to DB for a clean shutdown...')
+        await self.flush(True)
 
     def force_chain_reorg(self, count):
         '''Force a reorg of the given number of blocks.
@@ -826,6 +829,7 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
         # helper counter, atx are counted also for tx_count
         self.atx_count = 0
         self.ratx_count = 0
+        self.flush_height = 0
 
     def estimate_txs_remaining(self):
         # Try to estimate how many txs there are to go
@@ -839,6 +843,7 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
 
     def flush_data(self):
         assert self.state_lock.locked()
+        self.flush_height = self.height
         return BitcoinVaultFlushData(self.height, self.tx_count, self.headers,
                          self.tx_hashes, self.undo_infos, self.utxo_cache,
                          self.db_deletes, self.tip, self.tx_types)
@@ -860,6 +865,13 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
         self.tip = self.coin.header_hash(headers[-1])
 
     def advance_txs_and_atxs(self, txs, atxs):
+        # stdout.write(f"Block: {self.height}              \r'")
+        # stdout.flush()
+        if (len(atxs) != 0):
+            print(f'---------- advance_txs_and_atxs {self.height} ----------')
+            print(f'len(txs) {len(txs)}, ')
+            print(f'len(atxs) {len(atxs)}, ')
+
         # Use local vars for speed in the loops
         undo_info = []
         tx_num = self.tx_count
@@ -1098,7 +1110,20 @@ class BitcoinVaultBlockProcessor(BlockProcessor):
         self.ratx_count = 0
 
     def get_tx_hash_from_cache(self, tx_num, tx_height):
+
         height_tx_count = self.db.tx_counts[tx_height - 1]
         index = (tx_num - height_tx_count) * 32
-        tx_hash = self.tx_hashes[tx_height][index:index + 32]
+
+        print("--- get_tx_hash_from_cache ---")
+        print(f'tx_num {tx_num}')
+        print(f'height_tx_count {height_tx_count}')
+        print(f'self.flush_height {self.flush_height}')
+        print(f'tx_height {tx_height}')
+        print(f'len(self.tx_hashes) {len(self.tx_hashes)}')
+
+        assert tx_height-self.flush_height > 0
+        tx_hash = self.tx_hashes[tx_height-self.flush_height][index:index + 32]
+
+
+        print(f'tx_hash.hex() {tx_hash.hex()}')
         return tx_hash
